@@ -1,0 +1,154 @@
+@model Models.PagedResult<Models.Fournisseur>
+
+@{
+    ViewData["Title"] = "Liste des Fournisseurs";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Liste des Fournisseurs</h1>
+
+    <!-- Formulaire d'ajout -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Create" method="post" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="Nom" class="form-control" placeholder="Nom du Fournisseur..." required />
+                </div>
+
+                <div class="col-md-4">
+                    <input type="text" name="Adresse" class="form-control" placeholder="Adresse..." required />
+                </div>
+
+                <div class="col-md-3">
+                    <input type="text" name="Telephone" class="form-control" placeholder="Téléphone..." required />
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-secondary w-100">OK</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau des fournisseurs -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Adresse</th>
+                    <th>Téléphone</th>
+                    <th>Date Création</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @if (Model?.Items != null && Model.Items.Any())
+                {
+                    foreach (var fournisseur in Model.Items)
+                    {
+                        <tr>
+                            <td>@fournisseur.Id</td>
+                            <td>@fournisseur.Nom</td>
+                            <td>@fournisseur.Adresse</td>
+                            <td>@fournisseur.Telephone</td>
+                            <td>@fournisseur.DateCreation.ToString("dd/MM/yyyy")</td>
+
+                            <td>
+                                @if (fournisseur.IsActive)
+                                {
+                                    <span class="badge bg-info">Actif</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Archivé</span>
+                                }
+                            </td>
+
+                            <td>
+
+                                <!-- Approvisionnements du fournisseur -->
+                                <a asp-controller="Approvisionnement"
+                                   asp-action="Index"
+                                   asp-route-fournisseurId="@fournisseur.Id"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Approvisionnements
+                                </a>
+
+                                <!-- Modifier -->
+                                <a asp-action="Edit"
+                                   asp-route-id="@fournisseur.Id"
+                                   class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </a>
+
+                                <!-- Archiver -->
+                                <a asp-action="Archive"
+                                   asp-route-id="@fournisseur.Id"
+                                   class="btn btn-danger btn-sm">
+                                    <i class="bi bi-archive"></i> Archiver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center">Aucun fournisseur disponible</td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                <!-- Précédent -->
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber - 1)">Précédent</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                }
+
+                <!-- Pages -->
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                    </li>
+                }
+
+                <!-- Suivant -->
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber + 1)">Suivant</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                }
+
+            </ul>
+        </nav>
+
+        <div class="text-center text-muted mb-4">
+            Page @Model.PageNumber sur @Model.TotalPages — Total : @Model.TotalCount fournisseur(s)
+        </div>
+    }
+</div>

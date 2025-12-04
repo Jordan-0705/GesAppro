@@ -1,0 +1,209 @@
+@model Models.PagedResult<Models.Approvisionnement>
+
+@{
+    ViewData["Title"] = "Liste des Approvisionnements";
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Liste des Approvisionnements</h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nouvel Approvisionnement
+        </a>
+    </div>
+
+    <!-- Filtres de recherche -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+
+                <div class="col-md-3">
+                    <input type="text" name="reference" class="form-control"
+                           placeholder="Référence..."
+                           value="@ViewBag.SearchReference" />
+                </div>
+
+                <div class="col-md-3">
+                    <select name="fournisseurId" class="form-select">
+                        <option value="">Tous les fournisseurs</option>
+                        @foreach (var item in (ViewBag.Fournisseurs as SelectList)!)
+                        {
+                            <option value="@item.Value" selected="@(item.Selected)">
+                                @item.Text
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="articleId" class="form-select">
+                        <option value="">Tous les articles</option>
+                        @foreach (var item in (ViewBag.Articles as SelectList)!)
+                        {
+                            <option value="@item.Value" selected="@(item.Selected)">
+                                @item.Text
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="statut" class="form-select">
+                        <option value="">Statut</option>
+                        <option value="1" selected="@(ViewBag.SearchStatut == 1)">Reçu</option>
+                        <option value="2" selected="@(ViewBag.SearchStatut == 2)">En attente</option>
+                        <option value="3" selected="@(ViewBag.SearchStatut == 3)">Annulé</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-search"></i> Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau des approvisionnements -->
+    <div class="card">
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Référence</th>
+                            <th>Fournisseur</th>
+                            <th>Article</th>
+                            <th>Quantité</th>
+                            <th>PU</th>
+                            <th>Total</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (Model != null && Model.Items.Any())
+                        {
+                            foreach (var appro in Model.Items)
+                            {
+                                <tr>
+                                    <td>@appro.DateAppro.ToString("dd/MM/yyyy")</td>
+                                    <td>@appro.Reference</td>
+                                    <td>@appro.Fournisseur?.Nom</td>
+                                    <td>@appro.Article?.Libelle</td>
+                                    <td>@appro.Quantite</td>
+                                    <td>@appro.PrixUnitaire.ToString("N0") F</td>
+                                    <td>@appro.MontantTotal.ToString("N0") F</td>
+
+                                    <td>
+                                        @switch (appro.Statut)
+                                        {
+                                            case Models.StatutAppro.Recu:
+                                                <span class="badge bg-success">Reçu</span>
+                                                break;
+                                            case Models.StatutAppro.EnAttente:
+                                                <span class="badge bg-warning text-dark">En attente</span>
+                                                break;
+                                            case Models.StatutAppro.Annule:
+                                                <span class="badge bg-danger">Annulé</span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <div class="btn-group">
+                                            <a asp-action="Details"
+                                               asp-route-id="@appro.Id"
+                                               class="btn btn-sm btn-info text-white">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <a asp-action="Edit"
+                                               asp-route-id="@appro.Id"
+                                               class="btn btn-sm btn-warning text-white">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            <form asp-action="Archive"
+                                                  asp-route-id="@appro.Id"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        onclick="return confirm('Voulez-vous vraiment archiver cet approvisionnement ?')"
+                                                        class="btn btn-sm btn-secondary">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    Aucun approvisionnement trouvé
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+
+                    <div class="text-muted">
+                        Affichage de @((Model.PageNumber - 1) * Model.PageSize + 1)
+                        à @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount)
+                        sur @Model.TotalCount approvisionnements
+                    </div>
+
+                    <nav>
+                        <ul class="pagination mb-0">
+
+                            @if (Model.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" asp-action="Index"
+                                       asp-route-pageNumber="@(Model.PageNumber - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-pageNumber="@i">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" asp-action="Index"
+                                       asp-route-pageNumber="@(Model.PageNumber + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+
+                        </ul>
+                    </nav>
+
+                </div>
+            }
+        </div>
+    </div>
+</div>
